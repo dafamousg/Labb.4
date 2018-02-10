@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace Labb._4
 {
-    class Program
+    class Menu
     {
-        static void Main(string[] args)
-        {
-            Menu menu = new Menu();
 
-            menu.MainMenu();
+        public void MainMenu()
+        {
+
         }
+
 
     }
 }
