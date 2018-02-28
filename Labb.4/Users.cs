@@ -12,17 +12,17 @@ namespace Labb._4
     class Users
     {
         [BsonId]
-        public ObjectId _ID { get; set; }
+        public ObjectId Obj_id { get; set; }
 
-        [BsonElement("ID")]
-        public int ID { get; set; }
+        [BsonElement("Id")]
+        public int Id { get; set; }
 
         [BsonElement("Email")]
         public string Email { get; set; }
 
         public Users(int id, string email)
         {
-            ID = id;
+            Id = id;
             Email = email;
         }
     }

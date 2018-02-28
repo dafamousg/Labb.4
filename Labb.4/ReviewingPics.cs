@@ -11,17 +11,17 @@ namespace Labb._4
     class ReviewingPics
     {
         [BsonId]
-        public ObjectId _ID { get; set; }
+        public ObjectId Obj_id { get; set; }
 
-        [BsonElement("ID")]
-        public int ID { get; set; }
+        [BsonElement("Id")]
+        public int Id { get; set; }
 
         [BsonElement("Picture")]
         public string Picture { get; set; }
 
         public ReviewingPics(int id, string picture)
         {
-            ID = id;
+            Id = id;
             Picture = picture;
         }
     }
