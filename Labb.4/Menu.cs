@@ -77,7 +77,7 @@ namespace Labb._4
 
         }
 
-        //Adds users and pic "Flie" to DB
+        //Adds users and pic "File" to DB
         static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> imageCollection)
         {
             EmailIsCorrect = false;
