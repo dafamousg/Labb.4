@@ -11,9 +11,10 @@ namespace Labb._4
 {
     class Menu
     {
+        private const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
+
         public void MainMenu()
         {
-            const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
 
             MongoClient client = new MongoClient(connectionString);
 
@@ -69,16 +70,42 @@ namespace Labb._4
         }
 
         //Adds users and pic "Flie" to DB
+        public static bool DoesEmailExist(IMongoCollection<Users> collection, string email)
+        {
+            var Users = collection.Find(new BsonDocument()).ToList();
+            foreach (var userList in Users)
+            {
+                if (email == userList.Email)
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool DoesPicExist(IMongoCollection<ReviewingPics> collection, string picture)
+        {
+            var pic = collection.Find(new BsonDocument()).ToList();
+            foreach (var picList in pic)
+            {
+                if (picture == picList.Picture)
+                    return true;
+            }
+            return false;
+        }
+
         public static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> collection)
         {
             Console.Clear();
             int maxUsers = 0;
+            string picture = null;
+            string email = null;
             
-            var Users = collection.Find(new BsonDocument()).ToList();
-            if (Users.Count > 0)
-            {
+            var reviewPic = collection.Find(new BsonDocument()).ToList();
+            var Users = userCollection.Find(new BsonDocument()).ToList();
 
-                maxUsers = Users.Last().Id + 1;
+            if (reviewPic.Count > 0)
+            {
+                
+                maxUsers = reviewPic.Last().Id + 1;
 
             }
             else
@@ -86,18 +113,33 @@ namespace Labb._4
                 maxUsers = 0;
             }
             
-            Console.Clear();
+            Console.Clear();            
 
             Console.WriteLine("Enter your email. (Ex: Per.Nicklas@hotmail.com)");
-            string email = Console.ReadLine();
+            email = Console.ReadLine();
 
-            Console.Clear();
-            Console.WriteLine("Please enter the full name of your picture? (Including the extensions. Ex: .png)");
-            string picture = Console.ReadLine();
+            if (DoesEmailExist(userCollection, email))
+            {
+                Console.WriteLine("The email already exists");
+            }
+            else
+                userCollection.InsertOne(new Users(maxUsers, email));
 
 
-            userCollection.InsertOne(new Users(maxUsers, email));
-            collection.InsertOne(new ReviewingPics(maxUsers, picture));
+            while (DoesPicExist(collection, picture))
+            {
+                Console.WriteLine("Please enter the full name of your picture? (Including the extensions. Ex: .png)");
+                picture = Console.ReadLine();
+
+                if(DoesPicExist(collection, picture))
+                {
+                    Console.WriteLine("Picture is already in list");
+                    Console.WriteLine("Re-enter picture name.");
+                }
+                else
+                    collection.InsertOne(new ReviewingPics(maxUsers, picture));
+            }
+
 
             Continue();
         }
