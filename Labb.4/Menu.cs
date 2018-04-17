@@ -1,238 +1,227 @@
-﻿using MongoDB.Bson;
+﻿
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 
 namespace Labb._4
 {
-    using MongoDB.Bson;
-    using MongoDB.Driver;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net.Mail;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.VisualBasic;
-
-    namespace Labb._4
+    public class Menu
     {
-        public class Menu
+        private static string UserEmailInput { get; set; }
+        private static string PictureNameInput { get; set; }
+        private static string FormatType { get; set; }
+
+        protected static bool EmailIsCorrect { get; set; }
+        protected static bool PictureFormatIsCorrect { get; set; }
+
+        public void MainMenu()
         {
-            private static string UserEmailInput { get; set; }
-            private static string PictureNameInput { get; set; }
-            private static string FormatType { get; set; }
+            const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
 
-            protected static bool EmailIsCorrect { get; set; }
-            protected static bool PictureFormatIsCorrect { get; set; }
+            MongoClient client = new MongoClient(connectionString);
 
-            public void MainMenu()
+            var db = client.GetDatabase("Labb4");
+            var UsersCollection = db.GetCollection<Users>("Users");
+            var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
+            var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
+
+            string menuChoice;
+
+            do
             {
-                const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
+                Console.WriteLine("Press '1' to add a user");
+                Console.WriteLine("Press '2' to show all users");
+                Console.WriteLine("Press '3' to show pictures being reviewed");
+                Console.WriteLine("Press '4' to show approved pictures");
+                Console.WriteLine("Press '5' to quit program");
 
-                MongoClient client = new MongoClient(connectionString);
+                menuChoice = Console.ReadLine();
 
-                var db = client.GetDatabase("Labb4");
-                var UsersCollection = db.GetCollection<Users>("Users");
-                var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
-                var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
-
-                string menuChoice;
-
-                do
+                switch (menuChoice)
                 {
-                    Console.WriteLine("Press '1' to add a user");
-                    Console.WriteLine("Press '2' to show all users");
-                    Console.WriteLine("Press '3' to show pictures being reviewed");
-                    Console.WriteLine("Press '4' to show approved pictures");
-                    Console.WriteLine("Press '5' to quit program");
+                    case "1":
+                        AddUser(UsersCollection, ReviewingPicsCollection);
+                        break;
 
-                    menuChoice = Console.ReadLine();
+                    case "2":
+                        ShowAllUsers(UsersCollection);
+                        break;
 
-                    switch (menuChoice)
-                    {
-                        case "1":
-                            AddUser(UsersCollection, ReviewingPicsCollection);
-                            break;
+                    case "3":
+                        ShowReviewingPics(ReviewingPicsCollection);
+                        break;
 
-                        case "2":
-                            ShowAllUsers(UsersCollection);
-                            break;
+                    case "4":
+                        ShowApprovedPics(ApprovedPicsCollection);
+                        break;
 
-                        case "3":
-                            ShowReviewingPics(ReviewingPicsCollection);
-                            break;
+                    case "5":
+                        Console.Clear();
+                        Continue();
+                        break;
 
-                        case "4":
-                            ShowApprovedPics(ApprovedPicsCollection);
-                            break;
+                    default:
+                        Console.Clear();
+                        Console.WriteLine("Wrong input, please choose a valid option..");
+                        Continue();
+                        break;
+                }
 
-                        case "5":
-                            Console.Clear();
-                            Continue();
-                            break;
+            } while (menuChoice != "5");
 
-                        default:
-                            Console.Clear();
-                            Console.WriteLine("Wrong input, please choose a valid option..");
-                            Continue();
-                            break;
-                    }
+        }
 
-                } while (menuChoice != "5");
+        //Adds users and pic "File" to DB
+        static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> imageCollection)
+        {
+            EmailIsCorrect = false;
+            PictureFormatIsCorrect = false;
 
+            Console.Clear();
+            int maxUsers = 0;
+
+            var Users = userCollection.Find(new BsonDocument()).ToList();
+            if (Users.Count > 0)
+            {
+                maxUsers = Users.Last().Id + 1;
+            }
+            else
+            {
+                maxUsers = 0;
             }
 
-            //Adds users and pic "File" to DB
-            static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> imageCollection)
+            Console.WriteLine("Enter your email. (Ex: Per.Nicklas@hotmail.com)");
+
+            while (!EmailIsCorrect)
             {
-                EmailIsCorrect = false;
-                PictureFormatIsCorrect = false;
+                UserEmailInput = Console.ReadLine();
 
-                Console.Clear();
-                int maxUsers = 0;
-
-                var Users = userCollection.Find(new BsonDocument()).ToList();
-                if (Users.Count > 0)
+                if (IsEmailValid(UserEmailInput))
                 {
-                    maxUsers = Users.Last().Id + 1;
+                    EmailIsCorrect = true;
                 }
                 else
                 {
-                    maxUsers = 0;
+                    Console.WriteLine("You've entered an incorrect email. Please try again:");
                 }
 
-                Console.WriteLine("Enter your email. (Ex: Per.Nicklas@hotmail.com)");
-
-                while (!EmailIsCorrect)
-                {
-                    UserEmailInput = Console.ReadLine();
-
-                    if (IsEmailValid(UserEmailInput))
-                    {
-                        EmailIsCorrect = true;
-                    }
-                    else
-                    {
-                        Console.WriteLine("You've entered an incorrect email. Please try again:");
-                    }
-
-                }
-
-                Console.WriteLine("Enter the image name with the following formats:\n.jpg, .png, .tif or .bmp (Ex: derpydog.jpg)");
-
-                while (!PictureFormatIsCorrect)
-                {
-                    PictureNameInput = Console.ReadLine();
-                    FormatType = PictureNameInput.Substring(PictureNameInput.Length - Math.Min(4, PictureNameInput.Length));
-
-                    if (FormatType == ".jpg" || FormatType == ".png" || FormatType == ".tif" || FormatType == ".bmp")
-                    {
-                        PictureFormatIsCorrect = true;
-                    }
-                    else
-                    {
-                        Console.WriteLine("You've entered a wrong picture format, please try again:");
-                    }
-                }
-
-                userCollection.InsertOne(new Users(maxUsers, UserEmailInput));
-                imageCollection.InsertOne(new ReviewingPics(maxUsers, PictureNameInput));
-
-                Continue();
             }
 
-            //checks and shows all users in DB
-            static void ShowAllUsers(IMongoCollection<Users> collection)
+            Console.WriteLine("Enter the image name with the following formats:\n.jpg, .png, .tif or .bmp (Ex: derpydog.jpg)");
+
+            while (!PictureFormatIsCorrect)
             {
-                Console.Clear();
+                PictureNameInput = Console.ReadLine();
+                FormatType = PictureNameInput.Substring(PictureNameInput.Length - Math.Min(4, PictureNameInput.Length));
 
-                var list = collection.Find(new BsonDocument()).ToList();
-
-                if (list.Count > 0)
+                if (FormatType == ".jpg" || FormatType == ".png" || FormatType == ".tif" || FormatType == ".bmp")
                 {
-                    foreach (var users in list)
-                    {
-                        Console.WriteLine($"ID: {users.Id}, Email: {users.Email}");
-                    }
+                    PictureFormatIsCorrect = true;
                 }
                 else
                 {
-                    Console.WriteLine("There are no users in list.");
-
+                    Console.WriteLine("You've entered a wrong picture format, please try again:");
                 }
-
-                Continue();
             }
 
-            //checks and shows all Reviewing pics in DB
-            static void ShowReviewingPics(IMongoCollection<ReviewingPics> collection)
+            userCollection.InsertOne(new Users(maxUsers, UserEmailInput));
+            imageCollection.InsertOne(new ReviewingPics(maxUsers, PictureNameInput));
+
+            Continue();
+        }
+
+        //checks and shows all users in DB
+        static void ShowAllUsers(IMongoCollection<Users> collection)
+        {
+            Console.Clear();
+
+            var list = collection.Find(new BsonDocument()).ToList();
+
+            if (list.Count > 0)
             {
-                Console.Clear();
-
-                var list = collection.Find(new BsonDocument()).ToList();
-
-                if (list.Count > 0)
+                foreach (var users in list)
                 {
-                    foreach (var item in list)
-                    {
-                        Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
-                    }
+                    Console.WriteLine($"ID: {users.Id}, Email: {users.Email}");
                 }
-                else
-                {
-                    Console.WriteLine("There are no pics in que.");
-                }
+            }
+            else
+            {
+                Console.WriteLine("There are no users in list.");
 
-                Continue();
             }
 
-            //checks and shows all approved pics in DB
-            static void ShowApprovedPics(IMongoCollection<ApprovedPics> collection)
+            Continue();
+        }
+
+        //checks and shows all Reviewing pics in DB
+        static void ShowReviewingPics(IMongoCollection<ReviewingPics> collection)
+        {
+            Console.Clear();
+
+            var list = collection.Find(new BsonDocument()).ToList();
+
+            if (list.Count > 0)
             {
-                Console.Clear();
-
-                var list = collection.Find(new BsonDocument()).ToList();
-
-                if (list.Count > 0)
+                foreach (var item in list)
                 {
-                    foreach (var item in list)
-                    {
-                        Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
-                    }
+                    Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
                 }
-                else
-                {
-                    Console.WriteLine("There are no approved pics.");
-                }
-
-                Continue();
+            }
+            else
+            {
+                Console.WriteLine("There are no pics in que.");
             }
 
-            public static void Continue()
+            Continue();
+        }
+
+        //checks and shows all approved pics in DB
+        static void ShowApprovedPics(IMongoCollection<ApprovedPics> collection)
+        {
+            Console.Clear();
+
+            var list = collection.Find(new BsonDocument()).ToList();
+
+            if (list.Count > 0)
             {
-                Console.WriteLine("\nPress enter to continue..");
-                Console.ReadKey();
-                Console.Clear();
+                foreach (var item in list)
+                {
+                    Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("There are no approved pics.");
             }
 
-            public static bool IsEmailValid(string emailaddress)
-            {
-                try
-                {
-                    MailAddress m = new MailAddress(emailaddress);
+            Continue();
+        }
 
-                    return true;
-                }
-                catch (FormatException)
-                {
-                    return false;
-                }
+        public static void Continue()
+        {
+            Console.WriteLine("\nPress enter to continue..");
+            Console.ReadKey();
+            Console.Clear();
+        }
+
+        public static bool IsEmailValid(string emailaddress)
+        {
+            try
+            {
+                MailAddress m = new MailAddress(emailaddress);
+
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
             }
         }
     }
