@@ -9,214 +9,231 @@ using System.Threading.Tasks;
 
 namespace Labb._4
 {
-    class Menu
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net.Mail;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.VisualBasic;
+
+    namespace Labb._4
     {
-        private const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
-
-        public void MainMenu()
+        public class Menu
         {
+            private static string UserEmailInput { get; set; }
+            private static string PictureNameInput { get; set; }
+            private static string FormatType { get; set; }
 
-            MongoClient client = new MongoClient(connectionString);
+            protected static bool EmailIsCorrect { get; set; }
+            protected static bool PictureFormatIsCorrect { get; set; }
 
-            var db = client.GetDatabase("Labb4");
-            var UsersCollection = db.GetCollection<Users>("Users");
-            var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
-            var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
-
-            string menuChoice;
-
-            do
+            public void MainMenu()
             {
-                Console.WriteLine("Press '1' to add a user");
-                Console.WriteLine("Press '2' to show all users");
-                Console.WriteLine("Press '3' to show pictures being reviewed");
-                Console.WriteLine("Press '4' to show approved pictures");
-                Console.WriteLine("Press '5' to quit program");
+                const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
 
-                menuChoice = Console.ReadLine();
+                MongoClient client = new MongoClient(connectionString);
 
-                switch (menuChoice)
+                var db = client.GetDatabase("Labb4");
+                var UsersCollection = db.GetCollection<Users>("Users");
+                var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
+                var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
+
+                string menuChoice;
+
+                do
                 {
-                    case "1":
-                        AddUser(UsersCollection, ReviewingPicsCollection);
-                        break;
+                    Console.WriteLine("Press '1' to add a user");
+                    Console.WriteLine("Press '2' to show all users");
+                    Console.WriteLine("Press '3' to show pictures being reviewed");
+                    Console.WriteLine("Press '4' to show approved pictures");
+                    Console.WriteLine("Press '5' to quit program");
 
-                    case "2":
-                        ShowAllUsers(UsersCollection);
-                        break;
+                    menuChoice = Console.ReadLine();
 
-                    case "3":
-                        ShowReviewingPics(ReviewingPicsCollection);
-                        break;
+                    switch (menuChoice)
+                    {
+                        case "1":
+                            AddUser(UsersCollection, ReviewingPicsCollection);
+                            break;
 
-                    case "4":
-                        ShowApprovedPics(ApprovedPicsCollection);
-                        break;
+                        case "2":
+                            ShowAllUsers(UsersCollection);
+                            break;
 
-                    case "5":
-                        Console.Clear();
-                        Continue();
-                        break;
+                        case "3":
+                            ShowReviewingPics(ReviewingPicsCollection);
+                            break;
 
-                    default:
-                        Console.Clear();
-                        Console.WriteLine("Wrong input, please choose a valid option..");
-                        Continue();
-                        break;
-                }
+                        case "4":
+                            ShowApprovedPics(ApprovedPicsCollection);
+                            break;
 
-            } while (menuChoice != "5");
+                        case "5":
+                            Console.Clear();
+                            Continue();
+                            break;
 
-        }
+                        default:
+                            Console.Clear();
+                            Console.WriteLine("Wrong input, please choose a valid option..");
+                            Continue();
+                            break;
+                    }
 
-        //Adds users and pic "Flie" to DB
-        public static bool DoesEmailExist(IMongoCollection<Users> collection, string email)
-        {
-            var Users = collection.Find(new BsonDocument()).ToList();
-            foreach (var userList in Users)
-            {
-                if (email == userList.Email)
-                    return true;
-            }
-            return false;
-        }
-
-        public static bool DoesPicExist(IMongoCollection<ReviewingPics> collection, string picture)
-        {
-            var pic = collection.Find(new BsonDocument()).ToList();
-            foreach (var picList in pic)
-            {
-                if (picture == picList.Picture)
-                    return true;
-            }
-            return false;
-        }
-
-        public static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> collection)
-        {
-            Console.Clear();
-            int maxUsers = 0;
-            string picture = null;
-            string email = null;
-            
-            var reviewPic = collection.Find(new BsonDocument()).ToList();
-            var Users = userCollection.Find(new BsonDocument()).ToList();
-
-            if (reviewPic.Count > 0)
-            {
-                
-                maxUsers = reviewPic.Last().Id + 1;
+                } while (menuChoice != "5");
 
             }
-            else
+
+            //Adds users and pic "File" to DB
+            static void AddUser(IMongoCollection<Users> userCollection, IMongoCollection<ReviewingPics> imageCollection)
             {
-                maxUsers = 0;
-            }
-            
-            Console.Clear();            
+                EmailIsCorrect = false;
+                PictureFormatIsCorrect = false;
 
-            Console.WriteLine("Enter your email. (Ex: Per.Nicklas@hotmail.com)");
-            email = Console.ReadLine();
+                Console.Clear();
+                int maxUsers = 0;
 
-            if (DoesEmailExist(userCollection, email))
-            {
-                Console.WriteLine("The email already exists");
-            }
-            else
-                userCollection.InsertOne(new Users(maxUsers, email));
-
-
-            while (DoesPicExist(collection, picture))
-            {
-                Console.WriteLine("Please enter the full name of your picture? (Including the extensions. Ex: .png)");
-                picture = Console.ReadLine();
-
-                if(DoesPicExist(collection, picture))
+                var Users = userCollection.Find(new BsonDocument()).ToList();
+                if (Users.Count > 0)
                 {
-                    Console.WriteLine("Picture is already in list");
-                    Console.WriteLine("Re-enter picture name.");
+                    maxUsers = Users.Last().Id + 1;
                 }
                 else
-                    collection.InsertOne(new ReviewingPics(maxUsers, picture));
+                {
+                    maxUsers = 0;
+                }
+
+                Console.WriteLine("Enter your email. (Ex: Per.Nicklas@hotmail.com)");
+
+                while (!EmailIsCorrect)
+                {
+                    UserEmailInput = Console.ReadLine();
+
+                    if (IsEmailValid(UserEmailInput))
+                    {
+                        EmailIsCorrect = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("You've entered an incorrect email. Please try again:");
+                    }
+
+                }
+
+                Console.WriteLine("Enter the image name with the following formats:\n.jpg, .png, .tif or .bmp (Ex: derpydog.jpg)");
+
+                while (!PictureFormatIsCorrect)
+                {
+                    PictureNameInput = Console.ReadLine();
+                    FormatType = PictureNameInput.Substring(PictureNameInput.Length - Math.Min(4, PictureNameInput.Length));
+
+                    if (FormatType == ".jpg" || FormatType == ".png" || FormatType == ".tif" || FormatType == ".bmp")
+                    {
+                        PictureFormatIsCorrect = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("You've entered a wrong picture format, please try again:");
+                    }
+                }
+
+                userCollection.InsertOne(new Users(maxUsers, UserEmailInput));
+                imageCollection.InsertOne(new ReviewingPics(maxUsers, PictureNameInput));
+
+                Continue();
             }
 
-
-            Continue();
-        }
-
-        //checks and shows all users in DB
-        public static void ShowAllUsers(IMongoCollection<Users> collection)
-        {
-            Console.Clear();
-
-            var list = collection.Find(new BsonDocument()).ToList();
-
-            if (list.Count > 0)
+            //checks and shows all users in DB
+            static void ShowAllUsers(IMongoCollection<Users> collection)
             {
-                foreach (var users in list)
+                Console.Clear();
+
+                var list = collection.Find(new BsonDocument()).ToList();
+
+                if (list.Count > 0)
                 {
-                    Console.WriteLine($"ID: {users.Id}, Email: {users.Email}");
+                    foreach (var users in list)
+                    {
+                        Console.WriteLine($"ID: {users.Id}, Email: {users.Email}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("There are no users in list.");
+
+                }
+
+                Continue();
+            }
+
+            //checks and shows all Reviewing pics in DB
+            static void ShowReviewingPics(IMongoCollection<ReviewingPics> collection)
+            {
+                Console.Clear();
+
+                var list = collection.Find(new BsonDocument()).ToList();
+
+                if (list.Count > 0)
+                {
+                    foreach (var item in list)
+                    {
+                        Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("There are no pics in que.");
+                }
+
+                Continue();
+            }
+
+            //checks and shows all approved pics in DB
+            static void ShowApprovedPics(IMongoCollection<ApprovedPics> collection)
+            {
+                Console.Clear();
+
+                var list = collection.Find(new BsonDocument()).ToList();
+
+                if (list.Count > 0)
+                {
+                    foreach (var item in list)
+                    {
+                        Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("There are no approved pics.");
+                }
+
+                Continue();
+            }
+
+            public static void Continue()
+            {
+                Console.WriteLine("\nPress enter to continue..");
+                Console.ReadKey();
+                Console.Clear();
+            }
+
+            public static bool IsEmailValid(string emailaddress)
+            {
+                try
+                {
+                    MailAddress m = new MailAddress(emailaddress);
+
+                    return true;
+                }
+                catch (FormatException)
+                {
+                    return false;
                 }
             }
-            else
-            {
-                Console.WriteLine("There are no users in list");
-
-            }
-
-            Continue();
         }
-
-        //checks and shows all Reviewing pics in DB
-        public static void ShowReviewingPics(IMongoCollection<ReviewingPics> collection)
-        {
-            Console.Clear();
-
-            var list = collection.Find(new BsonDocument()).ToList();
-
-            if(list.Count > 0)
-            {
-                foreach (var item in list)
-                {
-                    Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("There are no pics in que.");
-            }
-
-            Continue();
-        }
-
-        //checks and shows all approved pics in DB
-        public static void ShowApprovedPics(IMongoCollection<ApprovedPics> collection)
-        {
-            Console.Clear();
-
-            var list = collection.Find(new BsonDocument()).ToList();
-
-            if (list.Count > 0)
-            {
-                foreach (var item in list)
-                {
-                    Console.WriteLine($"ID: {item.Id}, Pic: {item.Picture}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("There are no approved pics.");
-            }
-            
-            Continue();
-        }
-
-        public static void Continue()
-        {
-            Console.WriteLine("\nPress enter to continue..");
-            Console.ReadKey();
-            Console.Clear();
-        }
-
     }
 }

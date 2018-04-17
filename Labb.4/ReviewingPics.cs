@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Labb._4
 {
-    class ReviewingPics
+    public class ReviewingPics
     {
         [BsonId]
         public ObjectId Obj_id { get; set; }
