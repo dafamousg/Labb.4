@@ -23,11 +23,11 @@ namespace Labb._4
 
         public void MainMenu()
         {
-            const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
+            const string connectionString = @"mongodb://labb4mongodb:thvGuqhUCMdhSuhsup6VXFyLrHrpvYhMlcfzeNee8xo2VmDl9A2fvyvR8oPti0qviWiIXTwHuTSDDPH800tigA==@labb4mongodb.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
 
             MongoClient client = new MongoClient(connectionString);
 
-            var db = client.GetDatabase("Labb4");
+            var db = client.GetDatabase("Labb4DB");
             var UsersCollection = db.GetCollection<Users>("Users");
             var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
             var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
