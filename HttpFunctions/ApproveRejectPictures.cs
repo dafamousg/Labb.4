@@ -19,7 +19,7 @@ namespace HttpFunctions
         {
             log.Info($"C# HTTP trigger function processed a request.");
 
-            const string connectionString = @"mongodb://dafamousg:lcV26RwzW4o8sc6MmyZKZQHYfvtSrBOTRXYeHVsct2g4TA52XpqXoIdKOfRn9ntt9G35e6VbQqCApMqg52bGZA==@dafamousg.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
+            const string connectionString = @"mongodb://labb4mongodb:thvGuqhUCMdhSuhsup6VXFyLrHrpvYhMlcfzeNee8xo2VmDl9A2fvyvR8oPti0qviWiIXTwHuTSDDPH800tigA==@labb4mongodb.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
 
 
             MongoClient client = new MongoClient(connectionString);
