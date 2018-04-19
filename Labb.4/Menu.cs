@@ -20,6 +20,7 @@ namespace Labb._4
 
         protected static bool EmailIsCorrect { get; set; }
         protected static bool PictureFormatIsCorrect { get; set; }
+        public static bool userAlreadyExistent { get; private set; }
 
         public void MainMenu()
         {
@@ -111,28 +112,47 @@ namespace Labb._4
                 {
                     Console.WriteLine("You've entered an incorrect email. Please try again:");
                 }
-
             }
 
-            Console.WriteLine("Enter the image name with the following formats:\n.jpg, .png, .tif or .bmp (Ex: derpydog.jpg)");
-
-            while (!PictureFormatIsCorrect)
+            if (EmailIsCorrect)
             {
-                PictureNameInput = Console.ReadLine();
-                FormatType = PictureNameInput.Substring(PictureNameInput.Length - Math.Min(4, PictureNameInput.Length));
+                var userList = userCollection.Find(new BsonDocument()).ToList();
 
-                if (FormatType == ".jpg" || FormatType == ".png" || FormatType == ".tif" || FormatType == ".bmp")
-                {
-                    PictureFormatIsCorrect = true;
-                }
-                else
-                {
-                    Console.WriteLine("You've entered a wrong picture format, please try again:");
-                }
+                userAlreadyExistent = userList.Exists(u => u.Email == UserEmailInput);
             }
 
-            userCollection.InsertOne(new Users(maxUsers, UserEmailInput));
-            imageCollection.InsertOne(new ReviewingPics(maxUsers, PictureNameInput));
+            if (userAlreadyExistent)
+            {
+                Console.WriteLine("User already exist in database.");
+                Thread.Sleep(2000);
+            }
+            else
+            {
+
+                while (!PictureFormatIsCorrect)
+                {
+                    Console.WriteLine("Enter the image name with the following formats:\n.jpg, .png, .tif or .bmp (Ex: derpydog.jpg)");
+
+                    PictureNameInput = Console.ReadLine();
+                    FormatType = PictureNameInput.Substring(PictureNameInput.Length - Math.Min(4, PictureNameInput.Length));
+
+                    if (FormatType == ".jpg" || FormatType == ".png" || FormatType == ".tif" || FormatType == ".bmp")
+                    {
+                        PictureFormatIsCorrect = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("You've entered a wrong picture format, please try again:");
+                    }
+                }
+
+                Console.WriteLine("Adding user and image to Database..");
+
+                userCollection.InsertOne(new Users(maxUsers, UserEmailInput));
+                imageCollection.InsertOne(new ReviewingPics(maxUsers, PictureNameInput));
+
+                Console.WriteLine("User and picture added!");
+            }
 
             Continue();
         }

@@ -29,10 +29,12 @@ namespace HttpFunctions
             var ReviewingPicsCollection = db.GetCollection<ReviewingPics>("Reviewing_Pictures");
             var ApprovedPicsCollection = db.GetCollection<ApprovedPics>("ApprovedPics");
 
+            string validID = "The entered ID does not exist, please enter valid ID.";
+            string urlCommands = "Please type a command viewReviewQueue or approve/reject a picture by ID.";
 
             // parse query parameter
             var mode = req.GetQueryNameValuePairs()
-                .FirstOrDefault(q => string.Compare(q.Key, "mode", true) == 0) 
+                .FirstOrDefault(q => string.Compare(q.Key, "mode", true) == 0)
                 .Value;
 
             var id = req.GetQueryNameValuePairs()
@@ -57,156 +59,54 @@ namespace HttpFunctions
             else
             {
 
-
             }
 
 
-            if (mode == "viewReviewQueue")
+            switch (mode.ToUpper())
             {
-                if (listOfObj.Count > 0)
-                {
-                    return req.CreateResponse(HttpStatusCode.OK, listOfObj);
-                }
-                else
-                {
-                    return req.CreateResponse(HttpStatusCode.OK, "The viewReviewQueue does not contain any pictures, Please come again *Indian accent*");
-                }
-
-            }
-            else if (mode == "reject")
-            {
-                if (id != null)
-                {
-                    var findID = ReviewingPicsCollection.Find(q => q.Id == int.Parse(id));
-
-                    if (findID.Count() == 0)
+                case "VIEWREVIEWQUEUE":
+                    if (listOfObj.Count > 0)
+                        return req.CreateResponse(HttpStatusCode.OK, listOfObj);
+                    else
+                        return req.CreateResponse(HttpStatusCode.OK, "There are no pictures that need to be reviewed");
+                case "REJECT":
+                    if (id != null)
                     {
-                        return req.CreateResponse(HttpStatusCode.OK, "The ID you entered does not exist in the database, please enter a valid ID.");
+                        var findID = ReviewingPicsCollection.Find(q => q.Id == int.Parse(id));
+
+                        if (findID.Count() == 0)
+                            return req.CreateResponse(HttpStatusCode.OK, validID);
+                        else
+                        {
+                            var filter = Builders<ReviewingPics>.Filter.Eq("Id", id);
+                            ReviewingPicsCollection.DeleteOne(filter);
+                            return req.CreateResponse(HttpStatusCode.OK, "The picture was successfully removed.");
+                        }
                     }
                     else
+                        return req.CreateResponse(HttpStatusCode.OK, "Please enter an ID.");
+                case "APPROVE":
+                    if (id != null)
                     {
-                        var filter = Builders<ReviewingPics>.Filter.Eq("Id", id);
-                        ReviewingPicsCollection.DeleteOne(filter);
-                        return req.CreateResponse(HttpStatusCode.OK, "Success, The picture was removed from the Pending_Pictures collection.");
+                        var findID = ReviewingPicsCollection.Find(q => q.Id == int.Parse(id));
 
-                    }
-
-                }
-                else
-                {
-                    return req.CreateResponse(HttpStatusCode.OK, "Please enter an ID.");
-                }
-            }
-            else if (mode == "Approve")
-            {
-                if (id != null)
-                {
-                    var findID = ReviewingPicsCollection.Find(q => q.Id == int.Parse(id));
-
-                    if (findID.Count() == 0)
-                    {
-                        return req.CreateResponse(HttpStatusCode.OK, "The ID you entered does not exist in the database, please enter a valid ID.");
+                        if (findID.Count() == 0)
+                            return req.CreateResponse(HttpStatusCode.OK, validID);
+                        else
+                        {
+                            int tempID = findID.First().Id;
+                            string tempPic = findID.First().Picture;
+                            ApprovedPicsCollection.InsertOne(new ApprovedPics(tempID, tempPic));
+                            var filter = Builders<ReviewingPics>.Filter.Eq("Id", id);
+                            ReviewingPicsCollection.DeleteOne(filter);
+                            return req.CreateResponse(HttpStatusCode.OK, "The picture was approved.");
+                        }
                     }
                     else
-                    {
-                        int tempID = findID.First().Id;
-                        string tempPic = findID.First().Picture;
-                        ApprovedPicsCollection.InsertOne(new ApprovedPics(tempID, tempPic));
-                        var filter = Builders<ReviewingPics>.Filter.Eq("Id", id);
-                        ReviewingPicsCollection.DeleteOne(filter);
-                        return req.CreateResponse(HttpStatusCode.OK, "Success, The picture was approved and was moved to the collection SFWPictures.");
-
-                    }
-
-                }
-                else
-                {
-                    return req.CreateResponse(HttpStatusCode.OK, "Failed");
-                }
+                        return req.CreateResponse(HttpStatusCode.OK, "Failed");
+                default:
+                    return req.CreateResponse(HttpStatusCode.BadRequest, urlCommands);
             }
-            else
-            {
-                return req.CreateResponse(HttpStatusCode.BadRequest, "Please type viewReviewQueue or mode on the query string or in the request body");
-            }
-
-            //Switchs som bestämmer vad som ska hända
-            //switch (mode.ToUpper())
-            //{
-            //    case "VIEWREVIEWQUEUE":
-            //        var reviewsBson = GetReviewQueue(db);
-            //        List<string> pictures = new List<string>();
-            //        foreach (var item in reviewsBson)
-            //        {
-            //            //string imgPath = item.Elements.FirstOrDefault(e => string.Compare(e.Name, "path", true) == 0).Value.ToString();
-            //            pictures.Add(item.Values.ToJson());
-            //        }
-            //        return req.CreateResponse(HttpStatusCode.OK, pictures);
-            //    case "APPROVE":
-            //        var pictureForApproveQueue = db.GetCollection<BsonDocument>("pictures");
-            //        var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id));
-            //        var findSpecPicture = pictureForApproveQueue.Find(filter);
-            //        if (findSpecPicture.Count() != 0)
-            //        {
-            //            var update = Builders<BsonDocument>.Update.Set("approved", true);
-            //            pictureForApproveQueue.UpdateOne(filter, update);
-            //            return req.CreateResponse(HttpStatusCode.OK, "Successfully approved picture with id " + id);
-            //        }
-            //        else
-            //        {
-            //            return req.CreateResponse(HttpStatusCode.BadRequest, "The given id does not match any id in the database");
-            //        }
-            //    case "REJECT":
-            //        var pictureForRejectQueue = db.GetCollection<BsonDocument>("pictures");
-            //        filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(id));
-            //        var findSpecPictureForReject = pictureForRejectQueue.Find(filter);
-            //        if (findSpecPictureForReject.Count() != 0)
-            //        {
-            //            pictureForRejectQueue.DeleteOne(filter);
-            //            return req.CreateResponse(HttpStatusCode.OK, "Successfully rejected and removed picture with id " + id);
-            //        }
-            //        else
-            //        {
-            //            return req.CreateResponse(HttpStatusCode.BadRequest, "The given id does not match any id in the database");
-            //        }
-            //    default:
-            //        return req.CreateResponse(HttpStatusCode.BadRequest, "Invalid mode");
-            //}
-
         }
-
-
-
-
-
-
-
-        //// Get request body
-        //dynamic data = await req.Content.ReadAsAsync<object>();
-
-        //// Set name to query string or body data
-        //name = name ?? data?.name;
-
-        //return name == null
-        //   ? req.CreateResponse(HttpStatusCode.BadRequest, "Please pass a name on the query string or in the request body")
-        //    : req.CreateResponse(HttpStatusCode.OK, "Hello " + name);
-        //public static List<BsonDocument> GetReviewQueue(IMongoDatabase db)
-        //{
-        //    var pictureCollection = db.GetCollection<BsonDocument>("pictures");
-
-        //    var match = new BsonDocument
-        //    {
-        //        {
-        //            "$match",
-        //            new BsonDocument
-        //            {
-        //                {"approved", false }
-        //            }
-        //        }
-        //    };
-
-        //    var pipeline = new[] { match };
-
-        //    return pictureCollection.Aggregate<BsonDocument>(pipeline).ToList();
-        //}
     }
 }
