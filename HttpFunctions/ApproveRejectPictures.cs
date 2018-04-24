@@ -61,6 +61,8 @@ namespace HttpFunctions
 
             }
 
+            if (mode == null)
+                mode = "";
 
             switch (mode.ToUpper())
             {
@@ -104,6 +106,7 @@ namespace HttpFunctions
                     }
                     else
                         return req.CreateResponse(HttpStatusCode.OK, "Failed");
+
                 default:
                     return req.CreateResponse(HttpStatusCode.BadRequest, urlCommands);
             }

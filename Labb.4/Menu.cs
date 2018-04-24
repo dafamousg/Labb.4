@@ -20,7 +20,7 @@ namespace Labb._4
 
         protected static bool EmailIsCorrect { get; set; }
         protected static bool PictureFormatIsCorrect { get; set; }
-        public static bool userAlreadyExistent { get; private set; }
+        public static bool UserAlreadyExistent { get; private set; }
 
         public void MainMenu()
         {
@@ -104,7 +104,7 @@ namespace Labb._4
             {
                 UserEmailInput = Console.ReadLine();
 
-                if (IsEmailValid(UserEmailInput))
+                if (UserEmailInput != "" && IsEmailValid(UserEmailInput))
                 {
                     EmailIsCorrect = true;
                 }
@@ -118,10 +118,10 @@ namespace Labb._4
             {
                 var userList = userCollection.Find(new BsonDocument()).ToList();
 
-                userAlreadyExistent = userList.Exists(u => u.Email == UserEmailInput);
+                UserAlreadyExistent = userList.Exists(u => u.Email == UserEmailInput);
             }
 
-            if (userAlreadyExistent)
+            if (UserAlreadyExistent)
             {
                 Console.WriteLine("User already exist in database.");
                 Thread.Sleep(2000);
